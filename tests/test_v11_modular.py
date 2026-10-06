@@ -9,14 +9,13 @@ from decimal import Decimal
 from pathlib import Path
 from unittest.mock import patch
 from sports_os.application import ApplicationService
-from sports_os.application.migration import migrate_v10
+from sports_os_legacy.migration import migrate_v10
 from sports_os.application.manifest import render_manifest,parse_manifest
-from sports_os.kernel import Module,ModuleState,Project,Registry
+from sports_os.kernel import Module,ModuleState,Registry
 from sports_os.kernel.data import KernelError,canonical
 from sports_os.kernel.snapshot import verify_snapshot,ReleaseBlocked
-from sports_os.models.demo import make_demo
-from sports_os.revenue import calculate as legacy_calculate
-from sports_os.modules.common import pool_key
+from sports_os_legacy.models.demo import make_demo
+from sports_os_legacy.revenue import calculate as legacy_calculate
 
 class ModularTests(unittest.TestCase):
     def setUp(self):
@@ -239,7 +238,7 @@ for case in CASES:setattr(MigratedHistoricalTests,'test_migrated_'+case['id'].re
 class AdditionalBoundaryTests(ModularTests):
     # Reuse fixtures without re-running inherited tests (loader overridden below).
     def test_evidence_confirmed_vs_unconfirmed(self):
-        from sports_os.models.demo import make_version_b
+        from sports_os_legacy.models.demo import make_version_b
         b=self.app.migrate_v10(make_version_b(make_demo()))
         diff=self.app.compare_versions(self.p,b)
         fact=next(x for x in diff['business']['ticketing.pricing'] if x['path']=='/S01/VIP/price')

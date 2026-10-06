@@ -414,10 +414,6 @@ dd {
   min-width: 155px;
   padding: 4px 6px;
 }
-.array-editor td.managed {
-  min-width: 100px;
-  color: var(--muted);
-}
 .scalar input:not([type="checkbox"]) {
   width: 100%;
   min-width: 115px;
@@ -686,4 +682,98 @@ input {
 .sidebar .utility-nav button {
   min-height: 30px;
   padding-block: 5px;
+}
+.draft-banner {
+  margin: 6px 0 0;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  color: var(--warning);
+  font-size: 13px;
+}
+.template-choices {
+  border: 0;
+  padding: 0;
+  margin: 8px 0;
+  display: grid;
+  gap: 8px;
+}
+.template-choices legend {
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+.template-choice {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 10px 12px;
+  cursor: pointer;
+  background: var(--surface);
+}
+.template-choice.selected {
+  border-color: var(--accent);
+  background: var(--selected);
+}
+.template-choice span {
+  display: grid;
+  gap: 2px;
+}
+.template-choice small,
+.setup-name small {
+  color: var(--muted);
+}
+.template-includes {
+  margin: 4px 0 8px;
+}
+.more-settings {
+  margin: 12px 0;
+}
+.more-settings summary {
+  cursor: pointer;
+  color: var(--muted);
+}
+.setup-checklist {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 4px 18px 12px;
+  margin-bottom: 24px;
+}
+.setup-checklist ol {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.setup-checklist li {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  padding: 10px 0;
+  border-top: 1px solid var(--line);
+}
+.setup-checklist li.next {
+  background: var(--hover);
+}
+.setup-name {
+  display: grid;
+  gap: 2px;
+  flex: 1;
+}
+.setup-state {
+  font-size: 11px;
+  font-weight: 650;
+  min-width: 84px;
+  color: var(--muted);
+}
+.setup-state.done,
+.setup-state.auto {
+  color: var(--pass);
+}
+.setup-state.fix {
+  color: var(--block);
+}
+.setup-state.todo {
+  color: var(--warning);
 }

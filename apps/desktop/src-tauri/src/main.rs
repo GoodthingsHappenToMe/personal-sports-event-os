@@ -8,10 +8,24 @@ impl Drop for Sidecar { fn drop(&mut self) { let _=self.child.kill(); let _=self
 #[derive(Clone)]
 struct Bridge { process: Arc<Mutex<Option<Sidecar>>>, sequence: Arc<AtomicU64> }
 fn error(code: &str, message: String) -> Value { json!({"id":null,"ok":false,"error":{"code":code,"message":message,"details":{}}}) }
+/// Rust target triple of this build, matching the names Tauri gives external binaries.
+fn target_triple() -> String {
+    let arch=std::env::consts::ARCH;
+    match std::env::consts::OS {
+        "macos" => format!("{arch}-apple-darwin"),
+        "windows" => format!("{arch}-pc-windows-msvc"),
+        "linux" => format!("{arch}-unknown-linux-gnu"),
+        other => format!("{arch}-{other}"),
+    }
+}
+/// Long operations (large validations, snapshots) can take a while; a timeout kills the sidecar,
+/// so keep it generous. The frontend reopens the workspace after a restart.
+const SIDECAR_TIMEOUT: Duration = Duration::from_secs(300);
 fn spawn_sidecar() -> Result<Sidecar,String> {
+    let suffix=std::env::consts::EXE_SUFFIX;
     let path=if cfg!(debug_assertions) {
-        std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("binaries/sports-os-sidecar-aarch64-apple-darwin")
-    } else { std::env::current_exe().map_err(|e|e.to_string())?.with_file_name("sports-os-sidecar") };
+        std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join(format!("binaries/sports-os-sidecar-{}{suffix}",target_triple()))
+    } else { std::env::current_exe().map_err(|e|e.to_string())?.with_file_name(format!("sports-os-sidecar{suffix}")) };
     let mut child=Command::new(path).stdin(Stdio::piped()).stdout(Stdio::piped()).stderr(Stdio::inherit()).spawn().map_err(|e|e.to_string())?;
     let input=child.stdin.take().ok_or("Missing sidecar stdin")?;
     let output=child.stdout.take().ok_or("Missing sidecar stdout")?;
@@ -29,7 +43,7 @@ impl Bridge {
         let result=(|| -> Result<Value,String> {
             writeln!(process.input,"{}",request).map_err(|e|e.to_string())?;
             process.input.flush().map_err(|e|e.to_string())?;
-            let line=process.output.recv_timeout(Duration::from_secs(60)).map_err(|e|format!("Sidecar stopped or timed out: {e}"))?;
+            let line=process.output.recv_timeout(SIDECAR_TIMEOUT).map_err(|e|format!("Sidecar stopped or timed out: {e}"))?;
             let response:Value=serde_json::from_str(&line).map_err(|e|format!("Invalid sidecar protocol: {e}"))?;
             if response["id"]!=id{return Err("Response ID mismatch".into())}
             Ok(response)

@@ -1,5 +1,8 @@
 """Reproducible test report; no invented PASS rows."""
-import io,json,sys,unittest
+import io
+import json
+import sys
+import unittest
 from pathlib import Path
 from datetime import datetime,timezone
 
@@ -41,8 +44,8 @@ def main():
     for stage in range(8):
         p=out/f'S{stage}_TEST.log'
         if p.exists():
-            log=p.read_text();match=re.search(r'Ran (\d+) tests?',log)
-            lines.append(f"|S{stage}|{match.group(1) if match else '见日志'}|{'PASS' if log.rstrip().endswith('OK') else 'FAIL'}|")
+            log=p.read_text();found=re.search(r'Ran (\d+) tests?',log)
+            lines.append(f"|S{stage}|{found.group(1) if found else '见日志'}|{'PASS' if log.rstrip().endswith('OK') else 'FAIL'}|")
     lines+=['','## 验证范围与已修复问题','',
         '- 测试均为合成数据；没有读取公司原文件、U盘正文或真实票务平台。',
         '- 输入单价／座席变化、阶段和票档汇总、付费权益及产品映射均有可复算断言。',

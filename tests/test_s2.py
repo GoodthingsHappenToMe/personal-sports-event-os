@@ -1,8 +1,9 @@
-import unittest,tempfile
+import unittest
+import tempfile
 from pathlib import Path
-from sports_os.models.demo import make_demo
-from sports_os.validators import validate
-from sports_os.validators.excel import validate_xlsx
+from sports_os_legacy.models.demo import make_demo
+from sports_os_legacy.validators import validate
+from sports_os_legacy.validators.excel import validate_xlsx
 
 class GateSmokeTests(unittest.TestCase):
     def test_valid_demo_passes_release(self):

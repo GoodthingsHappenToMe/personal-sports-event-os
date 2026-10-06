@@ -1,10 +1,11 @@
-import unittest,tempfile,sqlite3
+import unittest
+import tempfile
+import sqlite3
 from pathlib import Path
-from copy import deepcopy
-from sports_os.models.demo import make_demo
-from sports_os.database import Store
-from sports_os.versioning.snapshot import create_snapshot,verify_snapshot,ReleaseBlocked
-from sports_os.exporters import export_release
+from sports_os_legacy.models.demo import make_demo
+from sports_os_legacy.database import Store
+from sports_os_legacy.versioning.snapshot import create_snapshot,verify_snapshot,ReleaseBlocked
+from sports_os_legacy.exporters import export_release
 from tests.cases import case_data
 
 class SnapshotTests(unittest.TestCase):

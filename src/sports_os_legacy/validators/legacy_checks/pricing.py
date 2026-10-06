@@ -1,13 +1,6 @@
-from collections import defaultdict
-from decimal import Decimal, InvalidOperation
-from datetime import timedelta
-from zoneinfo import ZoneInfo
-import re
-from ...models import assert_model,ModelError,sellable,canonical
-from ...models.core import moment,seating_key,_shape
-from ...models.schema import HOLD_FIELDS
-from ...revenue import calculate,product_details
-from ..gate import approved,CONTENT_SCHEMAS,RULES
+from decimal import Decimal
+from ...models.core import moment
+from ..gate import approved
 
 def check(data,g,start,end,releasing,sessions,seatmap,year):
     for p in data['prices']:

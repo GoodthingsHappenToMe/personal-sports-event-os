@@ -1,9 +1,12 @@
-import io,json,subprocess,sys,tempfile,unittest
+import json
+import subprocess
+import sys
+import tempfile
+import unittest
 from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor
 from unittest.mock import patch
 from sports_os.desktop.server import DesktopSession
-from sports_os.application import ApplicationService
 
 class DesktopProtocolTests(unittest.TestCase):
     def setUp(self):
@@ -25,7 +28,13 @@ class DesktopProtocolTests(unittest.TestCase):
         r=self.call('create_project',workspace=self.temp.name,identity=dict(id='SYNTHETIC',name='Synthetic project',timezone='UTC'),modules=[])
         self.assertTrue(r['ok']);self.assertTrue(self.call('save_project')['ok'])
         self.assertTrue(self.call('open_project',workspace=self.temp.name)['ok'])
-        self.assertFalse(self.call('create_project',workspace=self.temp.name,identity=dict(id='B',name='B',timezone='UTC'),modules=[])['ok'])
+        # Creating into a folder that already holds a project now makes a sub-folder instead of failing,
+        # and never touches the existing project.
+        before=self.call('get_project')['result']['project']
+        r=self.call('create_project',workspace=self.temp.name,identity=dict(id='B',name='B',timezone='UTC'),modules=[])
+        self.assertTrue(r['ok'],r);self.assertEqual(Path(r['result']['workspace']).parent,Path(self.temp.name).resolve())
+        self.session=DesktopSession()
+        self.assertEqual(self.call('open_project',workspace=self.temp.name)['result']['project'],before)
     def test_end_to_end(self):
         state=self.demo();before=self.call('create_snapshot');self.assertTrue(before['ok'],before)
         snap=before['result']['snapshot']['snapshot_id']
@@ -70,8 +79,13 @@ class DesktopProtocolTests(unittest.TestCase):
         self.assertEqual(p.returncode,0);self.assertEqual(len(p.stdout.splitlines()),2)
         self.assertTrue(all(json.loads(line)['ok'] for line in p.stdout.splitlines()))
     def test_draft_tamper_blocks(self):
-        self.call('create_project',workspace=self.temp.name,identity=dict(id='S',name='Synthetic',timezone='UTC'),modules=[])
-        path=Path(self.temp.name)/'data/desktop-draft.json';body=json.loads(path.read_text());body['project']['manifest']['project']['status']='APPROVED';path.write_text(json.dumps(body))
+        # An incomplete new project starts as a draft.
+        self.call('create_project',workspace=self.temp.name,identity=dict(id='S',name='Synthetic',timezone='UTC'),modules=['core.schedule','ticketing.refund'])
+        # Drafts live in the working store; a forged approval claim inside one must not open.
+        import sqlite3
+        con=sqlite3.connect(Path(self.temp.name)/'data/modular.sqlite')
+        record=json.loads(con.execute('SELECT record FROM drafts').fetchone()[0]);record['manifest']['project']['status']='APPROVED'
+        con.execute('UPDATE drafts SET record=?',(json.dumps(record),));con.commit();con.close()
         self.assertFalse(self.call('open_project',workspace=self.temp.name)['ok'])
     def test_approve_requires_reference_current_version(self):
         state=self.demo();self.call('apply_changeset',module_id='ticketing.pricing',changes=[dict(path=['rows',0,'price'],value=731)])

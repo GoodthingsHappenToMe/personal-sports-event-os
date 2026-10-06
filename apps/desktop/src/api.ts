@@ -13,6 +13,16 @@ export type Gate = { status: string; findings: Finding[] };
 export type Workspace = {
   workspace: string;
   modified_at: string;
+  /** True when the working copy is an incomplete draft that does not pass validation yet. */
+  draft: boolean;
+  /** Whether there is a saved version to fall back to (false for a brand-new unfinished project). */
+  can_discard: boolean;
+  /** Ordered setup checklist: what to fill in next. */
+  setup: Dict;
+  /** Modules enabled automatically by the last call -> the module that needed them. */
+  added_modules: Record<string, string>;
+  /** Workspace revision this copy was loaded at; saves from a stale revision are refused (CONFLICT). */
+  revision: number | null;
   project: {
     manifest: { project: Dict; modules: Record<string, boolean> };
     modules: Record<string, Dict>;
@@ -51,28 +61,20 @@ export const sportsOS = {
     return response.result as T;
   },
 };
-export const moduleName = (id: string) =>
-  ({
-    "core.schedule": "赛程 Schedule",
-    "core.venue": "场馆 Venue",
-    "ticketing.pricing": "票价 Pricing",
-    "ticketing.seating": "座席 Seating",
-    "ticketing.inventory": "库存 Inventory",
-    "ticketing.rights": "付费权益 Rights",
-    "finance.revenue": "收入 Revenue",
-    "product.travel": "旅行包 Travel",
-    "product.pass": "票务产品 Pass",
-    "project.tasks": "任务 Tasks",
-    "project.decisions": "决策 Decisions",
-    "demand.multiplicative": "需求 Multiplicative",
-    "demand.direct": "需求 Direct",
-    "quality.declarations": "质量声明",
-    "ticketing.refund": "退票规则",
-    "ticketing.identity": "实名规则",
-    "ticketing.transfer": "转票规则",
-    "ticketing.launch": "开票规则",
-    "ticketing.rights_return": "权益回流规则",
-  })[id] || id;
+/**
+ * Module presentation metadata comes from the backend (Module.display_name / category / description),
+ * so third-party modules get proper names without frontend changes. Unknown IDs fall back to the ID.
+ */
+let catalog: Record<string, Dict> = {};
+export const setModuleCatalog = (modules: Dict[] | undefined) => {
+  catalog = Object.fromEntries((modules || []).map((m) => [m.module_id, m]));
+};
+export const moduleName = (id: string): string =>
+  catalog[id]?.display_name || id;
+export const moduleCategory = (id: string): string =>
+  catalog[id]?.category || "Other";
+export const moduleDescription = (id: string): string =>
+  catalog[id]?.description || "";
 export const display = (v: unknown) =>
   v === null || v === undefined
     ? "—"

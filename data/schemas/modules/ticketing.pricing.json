@@ -19,37 +19,16 @@
             "minimum": 0,
             "maximum": 1000000000000
           },
-          "price_version": {
-            "type": "string",
-            "minLength": 1
-          },
-          "status": {
-            "enum": [
-              "DRAFT",
-              "APPROVED",
-              "PUBLISHED",
-              "RETIRED"
-            ]
-          },
           "valid_from": {
             "type": "string",
             "minLength": 1
-          },
-          "approval_ref": {
-            "type": [
-              "string",
-              "null"
-            ]
           }
         },
         "required": [
           "session_id",
           "price_class_id",
           "price",
-          "price_version",
-          "status",
-          "valid_from",
-          "approval_ref"
+          "valid_from"
         ],
         "additionalProperties": false
       }

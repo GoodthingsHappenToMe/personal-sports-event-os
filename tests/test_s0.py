@@ -1,8 +1,9 @@
-import unittest,tempfile
+import unittest
+import tempfile
 from pathlib import Path
-from sports_os.models import assert_model, ModelError, sellable, occupancy
-from sports_os.models.demo import make_demo
-from sports_os.database import Store
+from sports_os_legacy.models import assert_model, ModelError, sellable, occupancy
+from sports_os_legacy.models.demo import make_demo
+from sports_os_legacy.database import Store
 
 class ModelTests(unittest.TestCase):
     def test_demo_shape(self):

@@ -3,6 +3,9 @@ from decimal import localcontext, ROUND_HALF_EVEN
 from .common import *
 
 class Revenue(Module):
+    display_name='收入 Revenue'
+    category='Finance'
+    description='由容量、票价、需求和权益计算的收入预览（无输入数据）'
     module_id='finance.revenue'
     module_version='1.1.1'
     requires_capabilities=('capacity','demand','prices','schedule')
@@ -10,25 +13,40 @@ class Revenue(Module):
     def schema(self):return obj({})
 
     def cross_validate(self,c,g):
+        ck=Checks(g,self.module_id)
         pools=c.provider('capacity');prices=c.provider('prices');demand=c.provider('demand')
         rights=c.provider('rights',required=False) or {}
-        require(bool(demand),'需求结果不能为空')
+        if not ck(bool(demand),'REVENUE_NO_DEMAND',self.module_id,'需求结果不能为空'):return
         for key,pool in pools.items():
-            require(price_key(pool) in prices,'收入缺price_class')
-            if key in rights:
-                r=rights[key]
-                require(0<=r['quantity']<=pool['sellable_capacity'] and r['effective_unit_price']>=0,'权益标准化结果无效')
-                require(r['billing_basis'] in ('ALLOCATED','REDEEMED'),'权益计费基础无效')
-                require(set(r['expected_fulfillment'])==set(demand),'权益履约率必须覆盖当前Demand情景')
-                require(all(0<=q<=1 for q in r['expected_fulfillment'].values()),'权益履约率越界')
-        require(set(rights)<=set(pools),'权益结果引用未知容量池')
-        for rates in demand.values():
-            require(set(rates)==set(pools) and all(0<=q<=1 for q in rates.values()),'Demand结果必须完整且在0到1之间')
+            label='/'.join(key)
+            ck(price_key(pool) in prices,'REVENUE_MISSING_PRICE',self.module_id,f'容量池{label}没有票价','已有price_class',list(price_key(pool)))
+            if key not in rights:continue
+            r=rights[key]
+            ck(0<=r['quantity']<=pool['sellable_capacity'] and r['effective_unit_price']>=0,'REVENUE_RIGHTS_INVALID','ticketing.rights',
+               f'容量池{label}的权益标准化结果无效',f"0..{pool['sellable_capacity']}",r['quantity'])
+            ck(r['billing_basis'] in ('ALLOCATED','REDEEMED'),'REVENUE_RIGHTS_BASIS','ticketing.rights',f'容量池{label}权益计费基础无效',
+               ['ALLOCATED','REDEEMED'],r['billing_basis'])
+            ck(set(r['expected_fulfillment'])==set(demand),'REVENUE_RIGHTS_SCENARIOS','ticketing.rights',
+               f'容量池{label}的权益履约率必须覆盖当前Demand情景',sorted(demand),sorted(r['expected_fulfillment']))
+            ck(all(0<=q<=1 for q in r['expected_fulfillment'].values()),'REVENUE_RIGHTS_RATE_RANGE','ticketing.rights',
+               f'容量池{label}的权益履约率越界','0..1',{k:str(v) for k,v in r['expected_fulfillment'].items()})
+        unknown=sorted('/'.join(k) for k in set(rights)-set(pools))
+        ck(not unknown,'REVENUE_RIGHTS_UNKNOWN_POOL','ticketing.rights','权益结果引用未知容量池',[],unknown)
+        for name,rates in demand.items():
+            ck(set(rates)==set(pools),'REVENUE_DEMAND_INCOMPLETE',self.module_id,f'Demand情景{name}必须覆盖全部容量池',
+               len(pools),len(set(rates)&set(pools)))
+            out=sorted('/'.join(k) for k,q in rates.items() if not 0<=q<=1)
+            ck(not out,'REVENUE_DEMAND_RANGE',self.module_id,f'Demand情景{name}的需求率必须在0到1之间',[],out)
         if {'low','mid','high'}<=set(demand):
             for key in pools:
-                require(demand['low'][key]<=demand['mid'][key]<=demand['high'][key],'情景需求顺序不成立')
-                if key in rights:
-                    q=rights[key]['expected_fulfillment'];require(q['low']<=q['mid']<=q['high'],'权益情景顺序不成立')
+                if not all(key in demand[n] for n in ('low','mid','high')):continue
+                label='/'.join(key)
+                ck(demand['low'][key]<=demand['mid'][key]<=demand['high'][key],'REVENUE_SCENARIO_ORDER',self.module_id,
+                   f'容量池{label}需求率应满足low≤mid≤high','low<=mid<=high',[str(demand[n][key]) for n in ('low','mid','high')])
+                if key in rights and {'low','mid','high'}<=set(rights[key]['expected_fulfillment']):
+                    q=rights[key]['expected_fulfillment']
+                    ck(q['low']<=q['mid']<=q['high'],'REVENUE_RIGHTS_SCENARIO_ORDER','ticketing.rights',
+                       f'容量池{label}权益履约率应满足low≤mid≤high','low<=mid<=high',[str(q[n]) for n in ('low','mid','high')])
 
     def calculate(self,c):
         # Bounded input schemas (<=1e12); 80 digits keeps all finite input products exact.

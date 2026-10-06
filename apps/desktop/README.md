@@ -2,6 +2,8 @@
 
 macOS Apple Silicon，Tauri 2 + React + persistent frozen Python sidecar。中文 UI / 原名技术字段。仅合成数据。
 
+操作说明：[受控中英双语使用说明](../../docs/USER_GUIDE_STE_EN_ZH.md)。
+
 ## 从仓库构建
 
 开发机需 macOS、Xcode Command Line Tools、Rust/Cargo、Node ≥22、pnpm 11，以及 Python 3.12。最终用户无需这些环境。

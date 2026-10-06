@@ -19,8 +19,10 @@ def compare_versions(a,b,registry):
         for state in (left,right):
             if (state.module_version,state.schema_version)!=(module.module_version,module.schema_version):
                 raise ValueError('比较版本前需要相应插件版本或显式迁移：'+key)
-        metadata+=changes((left.module_version,left.schema_version,left.data_version),
-                          (right.module_version,right.schema_version,right.data_version),'modules/'+key+'/version')
+        # Approval lives in ModuleState (not in payloads), so it must be reported here as metadata.
+        lifecycle=lambda s:dict(module_version=s.module_version,schema_version=s.schema_version,data_version=s.data_version,
+                                status=s.status,approval_ref=s.approval_ref)
+        metadata+=changes(lifecycle(left),lifecycle(right),'modules/'+key)
         facts=module.diff(left.payload,right.payload)
         for fact in facts:
             evidence=[e for e in b.evidence if e.get('module_id')==key and fact['path'] in e.get('changed_paths',[])]

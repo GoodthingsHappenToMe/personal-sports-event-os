@@ -17,7 +17,7 @@ React local editing draft → sportsOS.call(method, params)
 
 ## Three states, not two competing databases
 1. **Unsubmitted UI draft**: browser memory only, dirty cells marked. Cancel/revert or confirm before navigating away. Submit waits for authoritative DTO.
-2. **Backend working state**: valid projects use existing SQLite + project.toml. Incomplete DRAFT uses atomically written `data/desktop-draft.json` with digest. On desktop reopen this draft takes priority; approved snapshots remain in SQLite. Once valid, service saves through existing persistence and removes that draft. CLI tools do not implicitly read the desktop draft.
+2. **Backend working state** (v1.2): one working store, `data/modular.sqlite`. Valid projects are saved to its project tables (plus `project.toml`); an incomplete DRAFT is saved to its `drafts` table and is the working copy for both the desktop and the CLI until it validates, at which point it is saved normally and the draft row removed. Every write bumps a workspace revision; a session whose copy is older than the stored revision gets `CONFLICT` instead of overwriting. v1.1.1 `data/desktop-draft.json` files are moved into the store on first open.
 3. **Snapshot**: existing immutable, hash-verified record and release export. View has no edit/approval controls. Snapshot revenue is computed by the backend using the verified frozen Project, never the current working copy.
 
 Draft persistence solves a reproduced desktop friction: a new profile can have incomplete required rule fields and must be saveable without being publishable. `APPROVED` cannot be written as an incomplete draft. Original 180 regressions remain unchanged.

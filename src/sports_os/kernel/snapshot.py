@@ -1,5 +1,4 @@
 from datetime import datetime,timezone
-from copy import deepcopy
 from .data import canonical,digest,KernelError
 from .contract import Project
 from .gate import validate_project
@@ -27,16 +26,17 @@ def create_snapshot(project,registry,store,ack_warnings=False):
                 created_at=datetime.now(timezone.utc).isoformat(),warnings_acknowledged=ack_warnings,quality_gate=gate.to_dict())
     record['record_hash']=digest(record)
     verify_snapshot(record);pid=project.manifest['project']['id']
-    for old in store.list_snapshots(pid):
-        if old['snapshot_id']==sid:return old
-        oldproject=Project.from_dict(old['project'])
-        if oldproject.manifest['project']['version']==project.manifest['project']['version']:
-            raise ReleaseBlocked('同一项目版本禁止对应不同快照内容；修改版本并重新批准')
-        for key in set(oldproject.enabled)&set(project.enabled):
-            a,b=oldproject.states[key],project.states[key]
-            if a.data_version==b.data_version and a.content_hash!=b.content_hash:
-                raise ReleaseBlocked('已批准模块内容发生变化但复用data_version：'+key)
-    with store.connect() as con:
+    # One write transaction: the uniqueness checks below cannot race with another writer's insert.
+    with store.transaction() as con:
+        for old in store.verified_snapshots(con,pid):
+            if old['snapshot_id']==sid:return old
+            oldproject=Project.from_dict(old['project'])
+            if oldproject.manifest['project']['version']==project.manifest['project']['version']:
+                raise ReleaseBlocked('同一项目版本禁止对应不同快照内容；修改版本并重新批准')
+            for key in set(oldproject.enabled)&set(project.enabled):
+                a,b=oldproject.states[key],project.states[key]
+                if a.data_version==b.data_version and a.content_hash!=b.content_hash:
+                    raise ReleaseBlocked('已批准模块内容发生变化但复用data_version：'+key)
         con.execute('INSERT INTO snapshots VALUES(?,?,?)',(sid,pid,canonical(record)))
         for key,state in index.items():
             con.execute('INSERT INTO snapshot_modules VALUES(?,?,?,?,?)',(sid,key,state['module_version'],state['schema_version'],state['content_hash']))

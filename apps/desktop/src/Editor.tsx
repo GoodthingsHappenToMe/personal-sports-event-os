@@ -140,14 +140,12 @@ export function SchemaField({
   onChange,
   path,
   readOnly = false,
-  managed = false,
 }: {
   schema: Dict;
   value: any;
   onChange: (v: any) => void;
   path: string;
   readOnly?: boolean;
-  managed?: boolean;
 }) {
   const type = Array.isArray(schema.type)
     ? schema.type.find((t: string) => t !== "null")
@@ -211,19 +209,10 @@ export function SchemaField({
                       <th scope="row">{i + 1}</th>
                       {columns.map(([k, s]) => {
                         const optional = !(item.required || []).includes(k);
-                        const locked =
-                          managed &&
-                          [
-                            "status",
-                            "approval_ref",
-                            "version",
-                            "price_version",
-                          ].includes(k);
                         return (
                           <td
                             key={k}
                             data-field={`${path}/${i}/${k}`}
-                            className={locked ? "managed" : ""}
                           >
                             {optional && !(k in row) ? (
                               <button
@@ -245,8 +234,7 @@ export function SchemaField({
                                 schema={s as Dict}
                                 value={row[k]}
                                 path={`${path}/${i}/${k}`}
-                                readOnly={readOnly || locked}
-                                managed={managed}
+                                readOnly={readOnly}
                                 onChange={(v) =>
                                   onChange(
                                     rows.map((x: any, j: number) =>
@@ -348,17 +336,7 @@ export function SchemaField({
                   schema={s as Dict}
                   value={obj[k]}
                   path={`${path}/${k}`}
-                  readOnly={
-                    readOnly ||
-                    (managed &&
-                      [
-                        "status",
-                        "approval_ref",
-                        "version",
-                        "price_version",
-                      ].includes(k))
-                  }
-                  managed={managed}
+                  readOnly={readOnly}
                   onChange={(v) => onChange({ ...obj, [k]: v })}
                 />
               )}
@@ -426,15 +404,6 @@ export function ModuleEditor({
     setDraft(data);
   }, [data, id]);
   useEffect(() => onDirty(dirty), [dirty, onDirty]);
-  const managed =
-    id === "ticketing.pricing" ||
-    [
-      "ticketing.refund",
-      "ticketing.identity",
-      "ticketing.transfer",
-      "ticketing.launch",
-      "ticketing.rights_return",
-    ].includes(id);
   return (
     <section aria-label="模块编辑器">
       <div className="editor-actions">
@@ -473,7 +442,6 @@ export function ModuleEditor({
           value={draft}
           path={id}
           readOnly={readOnly}
-          managed={managed}
           onChange={setDraft}
         />
       </OriginalData.Provider>

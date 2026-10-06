@@ -2,7 +2,6 @@ import json
 import math
 from datetime import datetime
 from pathlib import Path
-from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 class KernelError(ValueError):
     pass

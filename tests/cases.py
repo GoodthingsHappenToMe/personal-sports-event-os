@@ -1,7 +1,7 @@
 import json
 from pathlib import Path
-from sports_os.models.demo import make_demo
-from sports_os.validators import validate
+from sports_os_legacy.models.demo import make_demo
+from sports_os_legacy.validators import validate
 
 CASES=json.loads((Path(__file__).parent/'fixtures/regressions.json').read_text())
 

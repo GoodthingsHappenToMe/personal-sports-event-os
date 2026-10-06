@@ -9,6 +9,22 @@ PROFILES={
  'multi-session-tournament':('core.schedule','core.venue','ticketing.pricing','ticketing.seating','ticketing.inventory','demand.multiplicative','finance.revenue','product.pass'),
 }
 
+# Plain-language starting points for the new-project screen. Each lists only the modules the user would
+# pick; anything those modules need (dependencies, capability providers) is added automatically.
+TEMPLATES=(
+ dict(id='non-ticketed-event',label='免费 / 不售票活动',
+      description='赛程、场馆和工作任务。适合社区赛、训练营、公开课等不卖票的活动。',
+      modules=PROFILES['non-ticketed-event']),
+ dict(id='ticketed-indoor-event',label='售票赛事',
+      description='在赛程和场馆之外，管理票价、座席、库存，并预估票房收入。',
+      modules=PROFILES['ticketed-indoor-event']),
+ dict(id='multi-session-tournament',label='多场次锦标赛（含通票）',
+      description='多天、多场次的售票赛事，另外支持通票 / 套票产品。',
+      modules=PROFILES['multi-session-tournament']),
+ dict(id='custom',label='自定义',description='自己选择需要的功能模块；所需的依赖模块会自动加上。',modules=()),
+)
+
+
 def parse_manifest(path):
     with Path(path).open('rb') as f:return tomllib.load(f)
 

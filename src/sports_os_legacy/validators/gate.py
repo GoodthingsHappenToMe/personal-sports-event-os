@@ -1,13 +1,8 @@
 from dataclasses import dataclass, asdict
-from collections import defaultdict
-from decimal import Decimal, InvalidOperation
 from zoneinfo import ZoneInfo
-import re
-from datetime import timedelta
-from ..models import assert_model, ModelError, sellable, canonical
-from ..models.core import moment, seating_key, _shape
-from ..models.schema import obj, arr, S, RATE, I, HOLD_FIELDS
-from ..revenue import calculate, product_details
+from ..models import assert_model, ModelError
+from ..models.core import moment, seating_key
+from ..models.schema import obj, arr, S, RATE, I
 
 RULES={
  'Q001':'结构、类型、唯一键、外键及缺失值', 'Q002':'Excel错误值与计算错误',

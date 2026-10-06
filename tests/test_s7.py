@@ -1,11 +1,12 @@
-import unittest,tempfile
+import unittest
+import tempfile
 from pathlib import Path
-from sports_os.models.demo import make_demo,make_version_b
-from sports_os.validators import validate
-from sports_os.revenue import calculate
-from sports_os.database import Store
-from sports_os.versioning import compare
-from sports_os.versioning.snapshot import create_snapshot,ReleaseBlocked
+from sports_os_legacy.models.demo import make_demo,make_version_b
+from sports_os_legacy.validators import validate
+from sports_os_legacy.revenue import calculate
+from sports_os_legacy.database import Store
+from sports_os_legacy.versioning import compare
+from sports_os_legacy.versioning.snapshot import create_snapshot,ReleaseBlocked
 
 class FinalAcceptanceTests(unittest.TestCase):
     def test_missing_or_competing_rules_block_release(self):
@@ -48,7 +49,7 @@ class FinalAcceptanceTests(unittest.TestCase):
         self.assertEqual(validate(d).status,'BLOCK')
     def test_schema_and_demo_no_actual_data(self):
         import json
-        from sports_os.models.schema import SCHEMA
+        from sports_os_legacy.models.schema import SCHEMA
         data=json.dumps(make_demo(),ensure_ascii=False)
         for prohibited in ['身份证号','手机号','银行账号','订单号']:
             self.assertNotIn(prohibited,data)

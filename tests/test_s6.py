@@ -1,4 +1,8 @@
-import unittest,tempfile,subprocess,sys,os,json
+import unittest
+import tempfile
+import subprocess
+import sys
+import json
 from pathlib import Path
 from tests.cases import case_data
 

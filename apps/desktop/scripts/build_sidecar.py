@@ -7,7 +7,7 @@ data,hidden=collect_entry_point('sports_os.modules')
 triple=subprocess.check_output(['rustc','--print','host-tuple'],text=True).strip()
 args=[sys.executable,'-m','PyInstaller','--noconfirm','--clean','--onefile','--name','sports-os-sidecar-'+triple,
       '--distpath',str(root/'src-tauri/binaries'),'--workpath',str(root/'build/sidecar'),'--specpath',str(root/'build'),
-      '--collect-submodules','sports_os','--copy-metadata','personal-sports-event-os']
+      '--collect-submodules','sports_os','--collect-submodules','sports_os_legacy','--copy-metadata','personal-sports-event-os']
 for src,dest in data:args+=['--add-data',src+':'+dest]
 for name in hidden:args+=['--hidden-import',name]
 args+=[str(root/'scripts/sidecar_entry.py')]

@@ -1,10 +1,10 @@
 import unittest
 from copy import deepcopy
 from decimal import Decimal
-from sports_os.models.demo import make_demo
-from sports_os.revenue import calculate
-from sports_os.validators import validate
-from sports_os.versioning import compare
+from sports_os_legacy.models.demo import make_demo
+from sports_os_legacy.revenue import calculate
+from sports_os_legacy.validators import validate
+from sports_os_legacy.versioning import compare
 
 class BusinessFixes(unittest.TestCase):
     def test_travel_null(self):

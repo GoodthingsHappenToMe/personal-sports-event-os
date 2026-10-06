@@ -1,10 +1,10 @@
-import unittest,tempfile
-from copy import deepcopy
+import unittest
+import tempfile
 from pathlib import Path
-from sports_os.models.demo import make_demo
-from sports_os.models import ModelError,load_json
-from sports_os.validators import validate
-from sports_os.validators.excel import validate_xlsx
+from sports_os_legacy.models.demo import make_demo
+from sports_os_legacy.models import ModelError,load_json
+from sports_os_legacy.validators import validate
+from sports_os_legacy.validators.excel import validate_xlsx
 from tests.cases import CASES,case_data
 
 class HistoricalRegressionTests(unittest.TestCase):pass

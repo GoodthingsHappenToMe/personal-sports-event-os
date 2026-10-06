@@ -1,7 +1,7 @@
 import unittest
 from copy import deepcopy
-from sports_os.models.demo import make_demo,make_version_b
-from sports_os.versioning import compare,render_diff
+from sports_os_legacy.models.demo import make_demo,make_version_b
+from sports_os_legacy.versioning import compare,render_diff
 
 class DiffTests(unittest.TestCase):
     def test_numeric_confirmed_and_unknown(self):

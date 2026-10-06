@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "personal-sports-event-os"
-version = "1.1.1"
+version = "1.2.0"
 description = "Offline synthetic sports-event modeling and release quality gates"
 requires-python = ">=3.11"
 dependencies = []
@@ -39,3 +39,21 @@ where = ["src"]
 "demand.multiplicative" = "sports_os.modules.demand:MultiplicativeDemandModel"
 "demand.direct" = "sports_os.modules.demand:DirectDemandModel"
 "quality.declarations" = "sports_os.modules.quality:QualityDeclarations"
+
+[tool.ruff]
+line-length = 160
+target-version = "py311"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "B", "UP"]
+# The codebase is written in a dense one-statement-per-line style and uses star imports
+# inside sports_os.modules. These are tracked as follow-ups; enable them one at a time.
+ignore = ["E701", "E702", "E501", "F403", "F405", "UP", "E731", "E741", "E402", "B905"]
+
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["F401"]
+# Names imported here are re-exported to every module through `from .common import *`.
+"src/sports_os/modules/common.py" = ["F401"]
+# Legacy v1.0 compatibility diff: the nested helper runs inside the same loop iteration.
+"src/sports_os_legacy/versioning/diff.py" = ["B023"]

@@ -44,7 +44,7 @@ format_version、snapshot_id（SN11-）、created_at、content_hash、record_has
 
 ## v1.1.1 新增口径
 
-- working revision：原版本-r1、-r2；no-op不递增。嵌入价格price_version/规则version由模块prepare_revision同步。
+- working revision：原版本-r1、-r2；no-op不递增。
 - venues标准结果：venue_id → 场馆row。schedule.sessions各row可有venue_id。
 - rights标准结果新增billing_basis，不能缺省。旧工作态显式迁移默认REDEEMED以保留原语义。
 - Revenue每行每情景：public_expected_tickets、rights_allocated、rights_expected_fulfilled、rights_revenue_tickets、revenue_tickets、fulfilled_tickets、revenue_basis、public_revenue、rights_revenue、revenue。
@@ -52,9 +52,17 @@ format_version、snapshot_id（SN11-）、created_at、content_hash、record_has
 - 汇总average_price_per_revenue_ticket = revenue/revenue_tickets；average_revenue_per_fulfilled_ticket = revenue/fulfilled_tickets；分母0则null。删除旧歧义tickets/expected_tickets/average_price字段，调用方显式选择口径。
 - Schedule、Rights及五个Rule模块：module_version=1.1.1/schema_version=2。Revenue：module_version=1.1.1/schema_version=1（输出语义变化）。未升级模块保留1.1.0/1。应用包版本1.1.1不要求所有插件同步版本号。
 
+## v1.2 口径
+
+- 批准只存在于ModuleState（status、approval_ref、data_version）。Pricing和五个Rule模块的rows不再含price_version/version/status/approval_ref；批准不改变payload或content hash之外的业务内容，diff只报告业务字段。
+- Pricing：module_version=1.2.0/schema_version=2。五个Rule模块：module_version=1.2.0/schema_version=3。`migrate-project` 从1.1.x显式迁移并删除行级生命周期字段；迁移后模块为DRAFT，需重新人工批准。
+- v1.0输入的行级批准声明由适配器提升到ModuleState；行间不一致或版本不符时保留“已批准”声明但不带引用，内核K002会BLOCK，不会静默批准。
+
 ## 各模块payload字段（运行时schema生成）
 
 机器定义在data/schemas/modules/。表内“必填”相对于父对象；scope的条件约束另由模块validate检查。
+
+<!-- generated: module payload tables (sports_os.application.schemas) -->
 
 ### core.schedule
 
@@ -218,7 +226,6 @@ format_version、snapshot_id（SN11-）、created_at、content_hash、record_has
 |---|---|---|
 |rows|array|是|
 |rows[].rule_id|string|是|
-|rows[].version|string|是|
 |rows[].scope|object|是|
 |rows[].scope.type|['ALL', 'SESSION']|是|
 |rows[].scope.session_ids|array|否|
@@ -226,8 +233,6 @@ format_version、snapshot_id（SN11-）、created_at、content_hash、record_has
 |rows[].content.mode|string|是|
 |rows[].valid_from|string|是|
 |rows[].valid_to|string|是|
-|rows[].status|['DRAFT', 'APPROVED', 'PUBLISHED', 'RETIRED']|是|
-|rows[].approval_ref|['string', 'null']|是|
 
 ### ticketing.inventory
 
@@ -251,7 +256,6 @@ format_version、snapshot_id（SN11-）、created_at、content_hash、record_has
 |---|---|---|
 |rows|array|是|
 |rows[].rule_id|string|是|
-|rows[].version|string|是|
 |rows[].scope|object|是|
 |rows[].scope.type|['ALL', 'SESSION']|是|
 |rows[].scope.session_ids|array|否|
@@ -262,8 +266,6 @@ format_version、snapshot_id（SN11-）、created_at、content_hash、record_has
 |rows[].content.rounds[].fraction|number|是|
 |rows[].valid_from|string|是|
 |rows[].valid_to|string|是|
-|rows[].status|['DRAFT', 'APPROVED', 'PUBLISHED', 'RETIRED']|是|
-|rows[].approval_ref|['string', 'null']|是|
 
 ### ticketing.pricing
 
@@ -273,10 +275,7 @@ format_version、snapshot_id（SN11-）、created_at、content_hash、record_has
 |rows[].session_id|string|是|
 |rows[].price_class_id|string|是|
 |rows[].price|number|是|
-|rows[].price_version|string|是|
-|rows[].status|['DRAFT', 'APPROVED', 'PUBLISHED', 'RETIRED']|是|
 |rows[].valid_from|string|是|
-|rows[].approval_ref|['string', 'null']|是|
 
 ### ticketing.refund
 
@@ -284,7 +283,6 @@ format_version、snapshot_id（SN11-）、created_at、content_hash、record_has
 |---|---|---|
 |rows|array|是|
 |rows[].rule_id|string|是|
-|rows[].version|string|是|
 |rows[].scope|object|是|
 |rows[].scope.type|['ALL', 'SESSION']|是|
 |rows[].scope.session_ids|array|否|
@@ -297,8 +295,6 @@ format_version、snapshot_id（SN11-）、created_at、content_hash、record_has
 |rows[].content.windows[].fee_rate|number|是|
 |rows[].valid_from|string|是|
 |rows[].valid_to|string|是|
-|rows[].status|['DRAFT', 'APPROVED', 'PUBLISHED', 'RETIRED']|是|
-|rows[].approval_ref|['string', 'null']|是|
 
 ### ticketing.rights
 
@@ -320,7 +316,6 @@ format_version、snapshot_id（SN11-）、created_at、content_hash、record_has
 |---|---|---|
 |rows|array|是|
 |rows[].rule_id|string|是|
-|rows[].version|string|是|
 |rows[].scope|object|是|
 |rows[].scope.type|['ALL', 'SESSION']|是|
 |rows[].scope.session_ids|array|否|
@@ -328,8 +323,6 @@ format_version、snapshot_id（SN11-）、created_at、content_hash、record_has
 |rows[].content.hours_before|integer|是|
 |rows[].valid_from|string|是|
 |rows[].valid_to|string|是|
-|rows[].status|['DRAFT', 'APPROVED', 'PUBLISHED', 'RETIRED']|是|
-|rows[].approval_ref|['string', 'null']|是|
 
 ### ticketing.seating
 
@@ -358,7 +351,6 @@ format_version、snapshot_id（SN11-）、created_at、content_hash、record_has
 |---|---|---|
 |rows|array|是|
 |rows[].rule_id|string|是|
-|rows[].version|string|是|
 |rows[].scope|object|是|
 |rows[].scope.type|['ALL', 'SESSION']|是|
 |rows[].scope.session_ids|array|否|
@@ -366,5 +358,3 @@ format_version、snapshot_id（SN11-）、created_at、content_hash、record_has
 |rows[].content.allowed|boolean|是|
 |rows[].valid_from|string|是|
 |rows[].valid_to|string|是|
-|rows[].status|['DRAFT', 'APPROVED', 'PUBLISHED', 'RETIRED']|是|
-|rows[].approval_ref|['string', 'null']|是|

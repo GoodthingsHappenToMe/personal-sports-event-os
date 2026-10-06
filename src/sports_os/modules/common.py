@@ -10,7 +10,6 @@ N={'type':'number','minimum':0,'maximum':10**12}
 RATE={'type':'number','minimum':0,'maximum':1}
 BOOL={'type':'boolean'}
 NULL_S={'type':['string','null']}
-STATUS={'enum':['DRAFT','APPROVED','PUBLISHED','RETIRED']}
 D=lambda x:Decimal(str(x))
 ZERO=Decimal(0)
 
@@ -28,13 +27,47 @@ def unique(rows,key):
     return dict(zip(keys,rows))
 
 def require(condition,message):
+    """Raise for calculation-time invariants. Validation should use Checks so every problem is reported."""
     if not condition:raise KernelError(message)
 
-def approval(row,context,gate,source):
-    active=context.project.states[source.split('/')[0]] if source.split('/')[0] in context.project.states else None
-    must=context.for_release or (active and active.status in ('APPROVED','PUBLISHED')) or row['status'] in ('APPROVED','PUBLISHED')
-    if must and not (row['status'] in ('APPROVED','PUBLISHED') and isinstance(row.get('approval_ref'),str) and row['approval_ref'].strip()):
-        gate.add('APPROVAL',source,'批准状态与非空approval_ref',row['status'])
+
+class Checks:
+    """Collects findings instead of stopping at the first failure.
+
+    Sources use the editor's field paths (``module/rows/3/price``) so the desktop app can focus the field.
+    Every call returns whether the condition held, so dependent checks can be skipped without raising.
+    """
+    def __init__(self,gate,module_id):
+        self.gate=gate;self.module_id=module_id
+
+    def where(self,*parts):
+        return '/'.join([self.module_id,*(str(p) for p in parts)])
+
+    def row(self,index,collection='rows'):
+        """Field-path builder for one row: ``at=ck.row(3); at('price')``."""
+        def at(*fields):return self.where(collection,index,*fields)
+        return at
+
+    def __call__(self,ok,rule,source,message,expected=None,actual=None,severity='BLOCK'):
+        if not ok:self.gate.add(rule,source,message if expected is None else expected,actual,message,severity)
+        return bool(ok)
+
+    def time(self,value,source,rule='INVALID_TIME'):
+        try:return moment(value)
+        except KernelError as e:
+            self.gate.add(rule,source,'带UTC偏移的ISO 8601时间',value,str(e))
+            return None
+
+    def unique(self,rows,key,collection='rows',rule='DUPLICATE_KEY'):
+        """Report every duplicate business key; return the first row for each key."""
+        seen={}
+        for i,row in enumerate(rows):
+            k=key(row)
+            if k in seen:
+                self.gate.add(rule,self.where(collection,i),'业务键唯一',list(k) if isinstance(k,tuple) else k,
+                              f'与第{seen[k]+1}行业务键重复')
+            else:seen[k]=i
+        return {k:rows[i] for k,i in seen.items()}
 
 class RowsModule(Module):
     row_schema=None
@@ -43,21 +76,17 @@ class RowsModule(Module):
     def schema(self):return obj({'rows':arr(self.row_schema)})
     def rows(self,context):return context.payload(self.module_id)['rows']
     def key(self,row):return tuple(row[k] for k in self.identity)
-    def validate(self,context,gate):unique(self.rows(context),self.key)
+    def checks(self,gate):return Checks(gate,self.module_id)
+    def validate(self,context,gate):self.checks(gate).unique(self.rows(context),self.key)
     def canonical_row(self,row):return row
     def diff(self,old,new):
         def keyed(payload):return {'/'.join(map(str,self.key(r))):self.canonical_row(r) for r in payload['rows']}
         return changes(keyed(old),keyed(new))
     def export(self,context):return context.payload(self.module_id)
 
-class ApprovedRowsModule(RowsModule):
-    version_field='version'
 
-    def prepare_revision(self,payload,data_version,approval_ref=None):
-        from copy import deepcopy
-        payload=deepcopy(payload)
-        for row in payload['rows']:
-            row[self.version_field]=data_version
-            row['status']='APPROVED' if approval_ref else 'DRAFT'
-            row['approval_ref']=approval_ref
-        return payload
+def strip_lifecycle(payload,fields):
+    """Migration helper: approval lives only in ModuleState, never inside business rows."""
+    for row in payload['rows']:
+        for field in fields:row.pop(field,None)
+    return payload

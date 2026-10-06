@@ -1,13 +1,7 @@
-from collections import defaultdict
-from decimal import Decimal, InvalidOperation
-from datetime import timedelta
-from zoneinfo import ZoneInfo
-import re
-from ...models import assert_model,ModelError,sellable,canonical
-from ...models.core import moment,seating_key,_shape
-from ...models.schema import HOLD_FIELDS
-from ...revenue import calculate,product_details
-from ..gate import approved,CONTENT_SCHEMAS,RULES
+from decimal import Decimal
+from ...models import sellable
+from ...models.core import seating_key
+from ...revenue import product_details
 
 def check(data,g,start,end,releasing,sessions,seatmap,year):
     details={p['product_id']:p for p in product_details(data)}

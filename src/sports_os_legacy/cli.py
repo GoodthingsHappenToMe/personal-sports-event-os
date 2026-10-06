@@ -3,16 +3,16 @@ import argparse
 import json
 import sqlite3
 from pathlib import Path
-from ..models import load_json,canonical,assert_model,ModelError
-from ..models.demo import make_demo,make_version_b
-from ..models.schema import SCHEMA
-from ..database import Store
-from ..validators import validate
-from ..validators.excel import validate_xlsx
-from ..revenue import calculate
-from ..versioning import compare,render_diff
-from ..versioning.snapshot import create_snapshot,ReleaseBlocked
-from ..exporters import render_gate,render_revenue,export_release
+from .models import load_json,canonical,ModelError
+from .models.demo import make_demo,make_version_b
+from .models.schema import SCHEMA
+from .database import Store
+from .validators import validate
+from .validators.excel import validate_xlsx
+from .revenue import calculate
+from .versioning import compare,render_diff
+from .versioning.snapshot import create_snapshot,ReleaseBlocked
+from .exporters import render_gate,render_revenue,export_release
 
 def safe_path(workspace,path):
     root=Path(workspace).resolve()

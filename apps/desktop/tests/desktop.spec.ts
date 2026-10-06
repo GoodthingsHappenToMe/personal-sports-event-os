@@ -11,7 +11,10 @@ test.beforeEach(async ({ page }) => {
   workspace = mkdtempSync(join(tmpdir(), "sports-desktop-e2e-"));
   seq = 0;
   child = spawn(
-    resolve("src-tauri/binaries/sports-os-sidecar-aarch64-apple-darwin"),
+    resolve(
+      process.env.SPORTS_SIDECAR ??
+        "src-tauri/binaries/sports-os-sidecar-aarch64-apple-darwin",
+    ),
     [],
     { env: { PATH: "/usr/bin:/bin", HOME: process.env.HOME! } },
   );
@@ -63,28 +66,37 @@ async function axe(page: any) {
     await expect(page.getByRole("dialog")).toHaveCSS("opacity", "1");
   expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
 }
-test("blank wizard, dynamic module navigation, dependency errors, keyboard dialog", async ({
+test("one-screen wizard, setup checklist, auto-added dependencies, keyboard dialog", async ({
   page,
 }) => {
   await axe(page);
   await page.getByRole("button", { name: "新建项目" }).click();
   await page.getByLabel("项目名称", { exact: true }).fill("Synthetic Desktop");
-  await page.getByLabel("项目 ID", { exact: true }).fill("SYNTHETIC-DESKTOP");
-  await page.getByRole("button", { name: "下一步" }).click();
-  await page.getByRole("button", { name: "下一步" }).click();
-  await page.getByRole("button", { name: "选择文件夹并创建" }).click();
+  await page.getByRole("radio", { name: /自定义/ }).check();
+  await axe(page);
+  await page.getByRole("button", { name: "选择保存位置并创建" }).click();
   await expect(
     page.getByRole("heading", { name: "项目概览", exact: true }),
   ).toBeVisible();
+  await expect(page.getByText("SYNTHETIC-DESKTOP").first()).toBeVisible();
   await expect(nav(page, "收入 Revenue")).toHaveCount(0);
   await expect(nav(page, "旅行包 Travel")).toHaveCount(0);
   await nav(page, "能力模块").click();
-  await page.getByLabel("启用 core.schedule", { exact: true }).click();
-  await expect(nav(page, "赛程 Schedule")).toBeVisible();
+  // Enabling Revenue enables everything it needs instead of failing with a dependency error.
   await page.getByLabel("启用 finance.revenue", { exact: true }).click();
-  await expect(page.getByRole("alert")).toContainText("模块依赖冲突");
-  await page.getByRole("button", { name: "关闭错误提示" }).click();
-  await nav(page, "赛程 Schedule").click();
+  await expect(page.getByRole("status").last()).toContainText("已自动加入所需模块");
+  await expect(nav(page, "收入 Revenue")).toBeVisible();
+  await expect(nav(page, "赛程 Schedule")).toBeVisible();
+  await expect(nav(page, "票价 Pricing")).toBeVisible();
+  await page.getByRole("button", { name: "概览", exact: true }).click();
+  const checklist = page.getByRole("region", { name: "开始设置" });
+  await expect(checklist).toContainText("已完成 0 / 5");
+  // The empty project was saved before modules were added, so there is a version to fall back to.
+  await expect(page.getByRole("button", { name: "放弃草稿" })).toBeVisible();
+  await checklist.getByRole("button", { name: "去填写" }).click();
+  await expect(
+    page.getByRole("heading", { name: "赛程 Schedule", exact: true }),
+  ).toBeVisible();
   await expect(page.getByText("还没有数据行")).toBeVisible();
   await page.getByRole("button", { name: "新增行" }).click();
   await page.getByRole("button", { name: "概览", exact: true }).click();

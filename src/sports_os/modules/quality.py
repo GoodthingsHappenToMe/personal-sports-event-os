@@ -4,6 +4,9 @@ import re
 from .common import *
 
 class QualityDeclarations(Module):
+    display_name='质量声明'
+    category='Core'
+    description='人工声明的合计、单位、文档和指标，供质量检查核对'
     module_id='quality.declarations'
     requires_capabilities=('schedule',)
     optional_dependencies=('finance.revenue',)

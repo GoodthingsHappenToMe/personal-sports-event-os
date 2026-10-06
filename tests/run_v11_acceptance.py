@@ -1,5 +1,8 @@
 """Produce an actual v1.1 acceptance report without overwriting the frozen v1.0 report."""
-import io,json,sys,unittest
+import io
+import json
+import sys
+import unittest
 from datetime import datetime,timezone
 from pathlib import Path
 ROOT=Path(__file__).resolve().parents[1]

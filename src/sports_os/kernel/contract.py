@@ -24,6 +24,8 @@ class Project:
     manifest: dict
     states: dict[str, ModuleState] = field(default_factory=dict)
     evidence: list = field(default_factory=list)
+    # Workspace revision this copy was loaded at (Store); None = not loaded from a store. Never serialized.
+    base_revision: int | None = field(default=None, compare=False, repr=False)
 
     @property
     def enabled(self):
@@ -45,6 +47,13 @@ class Module:
     Schema and semantic migrations must be explicit, even when schema is unchanged.
     """
     module_id = ''
+    # Presentation metadata for UIs (the desktop app shows these; nothing in the kernel depends on them).
+    display_name = ''   # human name; UIs fall back to module_id
+    category = 'Other'  # grouping label, e.g. Core / Ticketing / Rules / Finance / Product / Project
+    description = ''    # one line: what data this module holds
+    # When several installed modules provide a capability, this one is chosen automatically when a user
+    # enables something that needs the capability (they can still switch to another provider).
+    default_provider = False
     module_version = '1.1.0'
     schema_version = '1'
     dependencies = ()

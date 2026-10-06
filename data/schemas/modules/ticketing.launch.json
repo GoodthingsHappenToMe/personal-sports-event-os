@@ -10,10 +10,6 @@
             "type": "string",
             "minLength": 1
           },
-          "version": {
-            "type": "string",
-            "minLength": 1
-          },
           "scope": {
             "type": "object",
             "properties": {
@@ -78,31 +74,14 @@
           "valid_to": {
             "type": "string",
             "minLength": 1
-          },
-          "status": {
-            "enum": [
-              "DRAFT",
-              "APPROVED",
-              "PUBLISHED",
-              "RETIRED"
-            ]
-          },
-          "approval_ref": {
-            "type": [
-              "string",
-              "null"
-            ]
           }
         },
         "required": [
           "rule_id",
-          "version",
           "scope",
           "content",
           "valid_from",
-          "valid_to",
-          "status",
-          "approval_ref"
+          "valid_to"
         ],
         "additionalProperties": false
       }

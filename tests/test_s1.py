@@ -1,8 +1,8 @@
 import unittest
 from decimal import Decimal
-from sports_os.models.demo import make_demo
-from sports_os.models import sellable
-from sports_os.revenue import calculate
+from sports_os_legacy.models.demo import make_demo
+from sports_os_legacy.models import sellable
+from sports_os_legacy.revenue import calculate
 
 class RevenueTests(unittest.TestCase):
     def test_recompute_and_rollups(self):
